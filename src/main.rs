@@ -1,14 +1,16 @@
 #![allow(unused)]
 
 use rand::Rng;
+mod restaurant;
 use restaurant::order_food;
 use std::cmp::Ordering;
 use std::collections::btree_map::Values;
+use std::collections::HashMap;
 use std::f32::consts::PI;
 use std::io;
 use std::io::{BufRead, BufReader, ErrorKind, Write};
 
-/*Functions
+/* Functions
 fn get_sum_2(x: i32, y: i32) -> i32 {
     return x + y;
 }
@@ -42,9 +44,7 @@ fn get_div_gen<T: Div<Output = T>>(x: T, y: T) -> T {
 }
 */
 
-use std::collections::HashMap;
-/*
-fn TraitsStuff() {
+fn trait_stuff() {
     trait Shape {
         fn new(length: f32, width: f32) -> Self;
         fn area(&self) -> f32;
@@ -84,9 +84,6 @@ fn TraitsStuff() {
     println!("Rec Area: {}", rec.area());
     println!("circ Area: {}", circ.area());
 }
-*/
-
-mod restaurant;
 
 fn main() {
     order_food();
