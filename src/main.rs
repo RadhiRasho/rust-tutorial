@@ -174,4 +174,128 @@ fn closures_round_three() {
 // & -> Box
 // * ->
 
-fn main() {}
+fn smart_pointer_stuff() {
+    struct TreeNode<T> {
+        pub left: Option<Box<TreeNode<T>>>,
+        pub right: Option<Box<TreeNode<T>>>,
+        pub key: T,
+    }
+
+    impl<T> TreeNode<T> {
+        pub fn new(key: T) -> Self {
+            TreeNode {
+                left: None,
+                right: None,
+                key,
+            }
+        }
+        pub fn left(mut self, node: TreeNode<T>) -> Self {
+            self.left = Some(Box::new(node));
+            return self;
+        }
+        pub fn right(mut self, node: TreeNode<T>) -> Self {
+            self.right = Some(Box::new(node));
+            return self;
+        }
+    }
+
+    let node = TreeNode::new(1)
+        .left(TreeNode::new(2))
+        .right(TreeNode::new(3));
+}
+
+// Concurrency
+use std::thread;
+use std::time::Duration;
+
+fn concurrency_stuff() {
+    let thread1 = thread::spawn(|| {
+        for i in 1..25 {
+            println!("Spawned Thread : {}", i);
+            thread::sleep(Duration::from_millis(1));
+        }
+    });
+
+    for i in 1..20 {
+        println!("Main Thread : {}", i);
+        thread::sleep(Duration::from_millis(1));
+    }
+    thread1.join().unwrap();
+}
+
+fn concurrency_bank_stuff_v1_flawed() {
+    pub struct Bank {
+        balance: f32,
+    }
+
+    fn withdraw(the_bank: &mut Bank, amount: f32) {
+        the_bank.balance -= amount;
+    }
+
+    let mut bank = Bank { balance: 100.00 };
+
+    withdraw(&mut bank, 5.00);
+
+    println!("Balance: {}", bank.balance);
+
+    fn customer(the_bank: &mut Bank) {
+        withdraw(the_bank, 5.00);
+    }
+
+    thread::spawn(move || {
+        customer(&mut bank);
+    })
+    .join()
+    .unwrap();
+}
+
+use std::cell::RefCell;
+use std::rc::Rc;
+use std::sync::{Arc, Mutex};
+
+fn concurrency_bank_stuff_v2() {
+    pub struct Bank {
+        balance: f32,
+    }
+
+    fn withdraw(the_bank: &Arc<Mutex<Bank>>, amount: f32) {
+        let mut bank_ref = the_bank.lock().unwrap();
+        if bank_ref.balance < 5.00 {
+            println!(
+                "Currency Balance: {}, Withdraw a smaller amount",
+                bank_ref.balance
+            )
+        } else {
+            bank_ref.balance -= amount;
+
+            println!(
+                "Customer Withdrew:  {}, Currency Balance:  {}",
+                amount, bank_ref.balance
+            );
+        }
+    }
+
+    fn customer(the_bank: Arc<Mutex<Bank>>) {
+        withdraw(&the_bank, 5.00);
+    }
+
+    let bank: Arc<Mutex<Bank>> = Arc::new(Mutex::new(Bank { balance: 20.00 }));
+
+    let handles = (0..10).map(|_| {
+        let bank_ref = bank.clone();
+
+        return thread::spawn(|| {
+            customer(bank_ref);
+        });
+    });
+
+    for handle in handles {
+        handle.join().unwrap();
+    }
+
+    println!("Total: {}", bank.lock().unwrap().balance);
+}
+
+fn main() {
+    concurrency_bank_stuff_v2();
+}
